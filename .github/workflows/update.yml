@@ -1,0 +1,32 @@
+# Follows new Longcable releases: updates the cask's version and checksum.
+name: Update cask
+on:
+  schedule: [{ cron: '17 */6 * * *' }]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update to the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=$(gh release view --repo Sapd/longcable --json tagName -q .tagName)
+          [[ "$tag" =~ ^v[0-9]+(\.[0-9]+)*$ ]] || { echo "unexpected tag $tag"; exit 1; }
+          version=${tag#v}
+          current=$(sed -n 's/^  version "\(.*\)"$/\1/p' Casks/longcable.rb)
+          [ "$version" != "$current" ] || { echo "already at $version"; exit 0; }
+          curl -fsSL "https://github.com/Sapd/longcable/releases/download/$tag/longcable-macos.tar.gz" -o archive.tar.gz
+          read -r published name < <(curl -fsSL "https://github.com/Sapd/longcable/releases/download/$tag/longcable-macos.tar.gz.sha256")
+          actual=$(sha256sum archive.tar.gz | cut -d' ' -f1)
+          [[ "$name" == longcable-macos.tar.gz && "$actual" == "$published" ]] || { echo "checksum mismatch"; exit 1; }
+          sed -i -e "s/^  version \".*\"$/  version \"$version\"/" -e "s/^  sha256 \".*\"$/  sha256 \"$actual\"/" Casks/longcable.rb
+          rm archive.tar.gz
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -am "longcable $version"
+          git push
