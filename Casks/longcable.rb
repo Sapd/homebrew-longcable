@@ -15,7 +15,6 @@ cask "longcable" do
   depends_on macos: :ventura
 
   app "longcable/Longcable.app"
-
   # Runs as root before the app is moved to Applications. Longcable is not notarized:
   # like its curl installer, it clears the quarantine flag so Gatekeeper doesn't block
   # the app and the background service, then installs or updates the service (a
