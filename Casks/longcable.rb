@@ -1,6 +1,6 @@
 cask "longcable" do
-  version "0.4.0"
-  sha256 "23866c312cf49e5bde4f8c4517f9bc711b9bf9ffd43811658929fe3927e92bea"
+  version "0.4.1"
+  sha256 "322ce1a372be747a804c22295a3387f92236b8e7511cd26de4278c5da289e937"
 
   url "https://github.com/Sapd/longcable/releases/download/v#{version}/longcable-macos.tar.gz"
   name "Longcable"
