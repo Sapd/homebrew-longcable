@@ -16,18 +16,20 @@ cask "longcable" do
 
   app "longcable/Longcable.app"
 
-  # Structured postflight_steps can't run a command with sudo; third-party taps may
-  # still use a postflight block.
-  postflight do
-    # Longcable is not notarized. Like its curl installer, drop the quarantine flag so
-    # Gatekeeper doesn't block the app and the background service.
-    system_command "/usr/bin/xattr",
-                   args: ["-dr", "com.apple.quarantine", "#{appdir}/Longcable.app", "#{staged_path}/longcable"]
-    # Installs or updates the background service (a launchd daemon). Keeps its settings.
-    system_command "/bin/bash",
-                   args: ["#{staged_path}/longcable/scripts/install-mac.sh"],
-                   sudo: true
-  end
+  # Runs as root before the app is moved to Applications. Longcable is not notarized:
+  # like its curl installer, it clears the quarantine flag so Gatekeeper doesn't block
+  # the app and the background service, then installs or updates the service (a
+  # launchd daemon). The service keeps its settings across updates.
+  installer script: {
+    executable: "/bin/bash",
+    args:       [
+      "-c",
+      'xattr -dr com.apple.quarantine "$1" && exec /bin/bash "$1/scripts/install-mac.sh"',
+      "longcable-install",
+      "#{staged_path}/longcable",
+    ],
+    sudo:       true,
+  }
 
   uninstall launchctl: "org.sapd.longcable",
             quit:      "org.sapd.longcable.app",
